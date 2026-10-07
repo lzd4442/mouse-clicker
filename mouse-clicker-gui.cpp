@@ -51,29 +51,24 @@ static volatile BOOL g_timer_running = FALSE;
 
 // ── Click ────────────────────────────────────────────
 static void DoClick(void) {
-    INPUT inp[2] = {0};
-
     DWORD down, up;
-    if (g_button == 0) { down = MOUSEEVENTF_LEFTDOWN;   up = MOUSEEVENTF_LEFTUP; }
+    if (g_button == 0)      { down = MOUSEEVENTF_LEFTDOWN;   up = MOUSEEVENTF_LEFTUP; }
     else if (g_button == 1) { down = MOUSEEVENTF_RIGHTDOWN;  up = MOUSEEVENTF_RIGHTUP; }
-    else { down = MOUSEEVENTF_MIDDLEDOWN;  up = MOUSEEVENTF_MIDDLEUP; }
+    else                    { down = MOUSEEVENTF_MIDDLEDOWN; up = MOUSEEVENTF_MIDDLEUP; }
 
+    // Primary: SendInput (preferred, works in most contexts)
+    INPUT inp[2];
+    memset(inp, 0, sizeof(inp));
     inp[0].type = INPUT_MOUSE;
     inp[0].mi.dwFlags = down;
-    inp[0].mi.time = 0;
-    inp[0].mi.dwExtraInfo = 0;
-
     inp[1].type = INPUT_MOUSE;
     inp[1].mi.dwFlags = up;
-    inp[1].mi.time = 0;
-    inp[1].mi.dwExtraInfo = 0;
 
-    UINT r = SendInput(2, inp, sizeof(INPUT));
+    UINT r = SendInput(2, inp, (int)sizeof(INPUT));
     if (r != 2) {
-        DWORD err = GetLastError();
-        char buf[128];
-        wsprintfA(buf, "SendInput failed! r=%u err=%lu", r, err);
-        OutputDebugStringA(buf);
+        // Fallback: mouse_event (works in admin/high-privilege contexts)
+        mouse_event(down, 0, 0, 0, 0);
+        mouse_event(up, 0, 0, 0, 0);
     }
 }
 
